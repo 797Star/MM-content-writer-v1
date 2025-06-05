@@ -26,7 +26,7 @@ Variation ${index + 1}
 ---
 [Content would be generated here in Burmese]
 `;
-      return content;
+      return content.trim();
     });
 
     const generatedContent = variations.join('\n\n---VARIATION SEPARATOR---\n\n');
@@ -53,7 +53,10 @@ Variation ${index + 1}
         generated_content: generatedContent
       });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Database error:', error);
+      throw new Error('Failed to save generated content');
+    }
 
     return generatedContent;
   } catch (error) {
