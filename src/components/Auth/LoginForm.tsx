@@ -20,7 +20,7 @@ export default function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       await signIn(data.email, data.password);
-      navigate('/dashboard');
+      navigate('/generator');
     } catch (err) {
       setError('Failed to sign in. Please check your credentials.');
     }
