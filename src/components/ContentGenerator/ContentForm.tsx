@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useAuth } from '../../contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 const contentSchema = z.object({
   content_type: z.enum([
@@ -14,16 +14,20 @@ const contentSchema = z.object({
   ]),
   tone: z.enum(['polite', 'friendly', 'professional']),
   length: z.enum(['short', 'normal', 'script']),
-  prompt: z.string().min(5, 'Please enter a prompt'),
+  prompt: z.string().min(5, 'Please enter at least 5 characters').max(500, 'Prompt is too long'),
 });
 
 type ContentFormData = z.infer<typeof contentSchema>;
 
-export default function ContentForm({ onGenerate }: { onGenerate: (data: any) => void }) {
+interface ContentFormProps {
+  onGenerate: (data: ContentFormData) => Promise<void>;
+}
+
+export default function ContentForm({ onGenerate }: ContentFormProps) {
+  const [loading, setLoading] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm<ContentFormData>({
     resolver: zodResolver(contentSchema),
   });
-  const [loading, setLoading] = useState(false);
 
   const onSubmit = async (data: ContentFormData) => {
     setLoading(true);
@@ -36,42 +40,84 @@ export default function ContentForm({ onGenerate }: { onGenerate: (data: any) =>
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Content Type</label>
-        <select {...register('content_type')} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-          <option value="product_promotion">Product Promotion</option>
-          <option value="product_info">Product Info</option>
-          <option value="seasonal_greeting">Seasonal Greeting</option>
-          <option value="product_explainer">Product Explainer</option>
-          <option value="sales_announcement">Sales Announcement</option>
-        </select>
-        {errors.content_type && <p className="text-red-600 text-sm">{errors.content_type.message}</p>}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Content Type</label>
+          <select
+            {...register('content_type')}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+          >
+            <option value="product_promotion">Product Promotion</option>
+            <option value="product_info">Product Information</option>
+            <option value="seasonal_greeting">Seasonal Greeting</option>
+            <option value="product_explainer">Product Explainer</option>
+            <option value="sales_announcement">Sales Announcement</option>
+          </select>
+          {errors.content_type && (
+            <p className="mt-1 text-sm text-red-600">{errors.content_type.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Tone</label>
+          <select
+            {...register('tone')}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+          >
+            <option value="polite">Polite</option>
+            <option value="friendly">Friendly</option>
+            <option value="professional">Professional</option>
+          </select>
+          {errors.tone && (
+            <p className="mt-1 text-sm text-red-600">{errors.tone.message}</p>
+          )}
+        </div>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Tone</label>
-        <select {...register('tone')} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-          <option value="polite">Polite</option>
-          <option value="friendly">Friendly</option>
-          <option value="professional">Professional</option>
-        </select>
-        {errors.tone && <p className="text-red-600 text-sm">{errors.tone.message}</p>}
-      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700">Length</label>
-        <select {...register('length')} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-          <option value="short">Short</option>
-          <option value="normal">Normal</option>
-          <option value="script">Script</option>
+        <select
+          {...register('length')}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+        >
+          <option value="short">Short (50-100 words)</option>
+          <option value="normal">Normal (100-200 words)</option>
+          <option value="script">Script (200+ words)</option>
         </select>
-        {errors.length && <p className="text-red-600 text-sm">{errors.length.message}</p>}
+        {errors.length && (
+          <p className="mt-1 text-sm text-red-600">{errors.length.message}</p>
+        )}
       </div>
+
       <div>
-        <label className="block text-sm font-medium text-gray-700">Prompt</label>
-        <textarea {...register('prompt')} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" rows={3} />
-        {errors.prompt && <p className="text-red-600 text-sm">{errors.prompt.message}</p>}
+        <label className="block text-sm font-medium text-gray-700">
+          Prompt
+          <span className="text-gray-500 text-xs ml-1">(Describe what you want to generate)</span>
+        </label>
+        <textarea
+          {...register('prompt')}
+          rows={4}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+          placeholder="Enter your content prompt here..."
+        />
+        {errors.prompt && (
+          <p className="mt-1 text-sm text-red-600">{errors.prompt.message}</p>
+        )}
       </div>
-      <button type="submit" className="w-full bg-primary-600 text-white py-2 rounded-md" disabled={loading}>
-        {loading ? 'Generating...' : 'Generate Content'}
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading ? (
+          <>
+            <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
+            Generating...
+          </>
+        ) : (
+          'Generate Content'
+        )}
       </button>
     </form>
   );
